@@ -37,12 +37,13 @@ def profile_and_draft_contract(spark, parquet_filepath: str, output_path: str):
         # Tasa max de valores nulos
         if contract_type in ("double", "integer"):
             nulls = df.filter(df[field.name].isNull()).count()
-            null_rate = round(nulls / total, 4)
+            null_rate = round(nulls / total, 5)
             if null_rate > 0:
+                logger.info(f"Regla de calidad para el campo {field.name} con {nulls} valores nulos. Tasa detectada: {null_rate}")
                 quality_rules.append({
                     "field": field.name,
                     "rule": "max_null_rate",
-                    "value": min(null_rate, 0.01)  # arbitrario
+                    "value": min(null_rate, 0.05)  # 5% arbitrario
                 })
 
     # Creacion de reglas de calidad por tabla o contrato

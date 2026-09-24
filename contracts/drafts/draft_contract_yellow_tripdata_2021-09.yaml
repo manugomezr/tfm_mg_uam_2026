@@ -2,7 +2,7 @@ contract:
   name: draft_contract_yellow_tripdata_2021-09.yaml
   version: '1.0'
   owner: tfm_mg_uam
-  enforcement_level: 3
+  enforcement_level: 2
 schema:
 - name: VendorID
   type: long
@@ -79,4 +79,4 @@ quality:
   value: 0
 table_quality:
 - rule: min_row_count
-  value: 495
+  value: 510

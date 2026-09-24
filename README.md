@@ -1,25 +1,42 @@
+# TFM - Contratos de datos como regla arquitectónica base en pipelines de datos
+### Alumno: Manuel Adolfo Gomez Ramos
+
+#### Diagrama del flujo de trabajo
+![Diagrama solucion](tfm_diagrama_datacontracts.png)
+
+#### Estrctura de ficheros
+
 ```
-Prototipo_TFM_DataContracts_MG/
+Prototipo_TFM_DataContracts/
+├── .venv/
 ├── contracts/
 │   └── drafts/
-│       └── draft_contract_yellow_tripdata_2021-09.yaml
-├── src/
-│   ├── onboarding.py
-│   ├── enforcement.py
-│   └── pipeline.py
+│       ├── draft_contract_yellow_tripdata_2021-09.yaml
+│       ├── draft_contract_yellow_tripdata_2021-09_enf_lvl_3.yaml
+│       └── draft_contract_yellow_tripdata_2025-09.yaml
 ├── data/
-│   ├── landing/
+│   ├── baseline_certified/
 │   ├── certified/
+│   ├── certified_2025-09/
+│   ├── landing/
+│   ├── observability/
 │   ├── quarantine/
-│   └── observability/
-├── main.py
+│   └── quarantine_2025-09/
+├── src/
+│   ├── enforcement.py
+│   ├── onboarding.py
+│   └── pipeline.py
+├── .gitignore
 ├── contract_gen.py
+├── main.py
 ├── README.md
 └── requirements.txt
 ```
-Enlace al fichero parquet para generar el contrato 2021-09
-https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2021-09.parquet
 
+#### Repositorio de dataset público 
+Enlace a los distintos datasets usados en el TFM:
+- https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2021-09.parquet
 
-Enlace al fichero parquet para generar el contrato 2025-09:
-https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2025-09.parquet
+- https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-09.parquet
+
+- https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2025-09.parquet

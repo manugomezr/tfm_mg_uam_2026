@@ -1,3 +1,4 @@
+from pyspark.sql.functions import col
 from pyspark.sql.types import (
     StructType, StructField, StringType, IntegerType,
     DoubleType, BooleanType, ArrayType, LongType
@@ -22,7 +23,7 @@ def build_spark_schema(contract: dict, include_diagnostic_fields: bool = False) 
     ]
     if include_diagnostic_fields:
         fields.append(StructField("_failed_rule", StringType(), True))
-        fields.append(StructField("_contract_version", StringType(), True))
+        fields.append(StructField("_contract_name", StringType(), True))
     return StructType(fields)
 
 
@@ -48,14 +49,22 @@ def run_pipeline(
         contract_path: str,
         batch_id: str,
         cert_path : str = "data/certified/",
-        quarantine_path : str = "data/quarantine/"
+        quarantine_path : str = "data/quarantine/",
+        infer_schema: bool = False
 ):
 
     contract = load_contract(contract_path)
     enforcement_level = contract["contract"]["enforcement_level"]
 
     read_schema = build_spark_schema(contract)
-    df = spark.read.csv(file_path, header=True, schema=read_schema)
+    if infer_schema:
+        df = spark.read.csv(file_path, header=True, inferSchema=True)
+        for f in contract["schema"]:
+            if f["name"] in df.columns:
+                df = df.withColumn(f["name"], col(f["name"]).cast(SPARK_TYPE_MAP[f["type"]]))
+
+    else:
+        df = spark.read.csv(file_path, header=True, schema=read_schema)
     df = df.na.replace(["Null", "null", "None", "NA", ""], None)
     rows = [row.asDict() for row in df.collect()]
 
@@ -92,8 +101,7 @@ def run_pipeline(
     spark.createDataFrame(obs, schema=build_observability_schema()).write.format("delta").mode("append").save("data/observability/")
 
     logger.info(
-        f"Batch {batch_id}: {len(valid_rows)} válidos, {len(quarantine_rows)} en cuarentena, rejected_batch={result['rejected_batch']},"
-        f"errores: {result['errors']}")
+        f"Batch {batch_id}: {len(valid_rows)} válidos, {len(quarantine_rows)} en cuarentena, rejected_batch={result['rejected_batch']}")
 
 def run_baseline_pipeline(spark, file_path: str, batch_id: str):
 

@@ -1,11 +1,11 @@
 contract:
-  name: draft_contract_yellow_tripdata_2021-09.yaml
+  name: draft_contract_yellow_tripdata_2025-09.yaml
   version: '1.0'
   owner: tfm_mg_uam
-  enforcement_level: 3
+  enforcement_level: 2
 schema:
 - name: VendorID
-  type: long
+  type: integer
   nullable: true
 - name: tpep_pickup_datetime
   type: long
@@ -14,22 +14,22 @@ schema:
   type: long
   nullable: false
 - name: passenger_count
-  type: double
+  type: long
   nullable: true
 - name: trip_distance
   type: double
   nullable: true
 - name: RatecodeID
-  type: double
+  type: long
   nullable: true
 - name: store_and_fwd_flag
   type: string
   nullable: true
 - name: PULocationID
-  type: long
+  type: integer
   nullable: true
 - name: DOLocationID
-  type: long
+  type: integer
   nullable: true
 - name: payment_type
   type: long
@@ -58,25 +58,19 @@ schema:
 - name: congestion_surcharge
   type: double
   nullable: true
-- name: airport_fee
+- name: Airport_fee
+  type: double
+  nullable: true
+- name: cbd_congestion_fee
   type: double
   nullable: true
 quality:
-- field: passenger_count
-  rule: max_null_rate
-  value: 0.0482
-- field: RatecodeID
-  rule: max_null_rate
-  value: 0.0482
 - field: congestion_surcharge
   rule: max_null_rate
-  value: 0.0482
-- field: airport_fee
+  value: 0.05
+- field: Airport_fee
   rule: max_null_rate
-  value: 0.0482
-- field: tpep_dropoff_datetime
-  rule: max_null_rate
-  value: 0
+  value: 0.05
 table_quality:
 - rule: min_row_count
   value: 495
