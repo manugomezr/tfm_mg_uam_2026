@@ -16,7 +16,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-logger.info("Inicializando generacion de data contracts")
+logger.info("Inicializando pipeline de data contracts")
 builder = SparkSession.builder \
     .appName("TFM_mg_uam") \
     .master("local[2]") \
@@ -35,41 +35,50 @@ spark.sparkContext.setLogLevel("ERROR")
 logger.info(f"SparkSession creada")
 
 # Caso 1: registros nulos o inválidos
+logger.info(f"Pipeline de registros nulos")
 run_pipeline(
     spark,
     "data/landing/2021-09/yellow_tripdata_2021-09_nulls.csv",
     "contracts/drafts/draft_contract_yellow_tripdata_2021-09.yaml",
     "batch_2021_09"
 )
-logger.info(f"Pipeline de registros nulos")
+
+logger.info(f"Pipeline de violación de reglas de calidad")
+run_pipeline(
+    spark,
+    "data/landing/2021-09/yellow_tripdata_2021-09_nulls.csv",
+    "contracts/drafts/draft_contract_yellow_tripdata_2021-09.yaml",
+    "batch_2021_09"
+)
+
 
 # Caso 2: incumplimiento de reglas de tabla o lote
+logger.info(f"Pipeline de violacion de reglas de tabla/lote")
 run_pipeline(
     spark,
     "data/landing/2023-09/yellow_tripdata_2023-09.csv",
     "contracts/drafts/draft_contract_yellow_tripdata_2021-09.yaml",
     "batch_2023_09"
 )
-logger.info(f"Pipeline de violacion de reglas de tabla/lote")
 
 # Caso 3: schema drift
+logger.info(f"Pipeline de schema drift")
 run_pipeline(
    spark,
     "data/landing/2025-09/yellow_tripdata_2025-09.csv",
-    "contracts/drafts/draft_contract_yellow_tripdata_2021-09.yaml",
+    "contracts/drafts/draft_contract_yellow_tripdata_2021-09_enf_lvl_3.yaml",
     "batch_2025-09"
 )
-logger.info(f"Pipeline de schema drift")
-
 
 # Caso 4: enforcement level 3 - registro y rechazo de batch
+logger.info(f"Pipeline de enforcement level = 3, descarte de lote 2025, contrato 2021")
 run_pipeline(
     spark,
     "data/landing/2025-09/yellow_tripdata_2025-09.csv",
-    "contracts/drafts/draft_contract_yellow_tripdata_2021-09.yaml",
+    "contracts/drafts/draft_contract_yellow_tripdata_2021-09_enf_lvl_3.yaml",
     "batch_2025_09_enforced"
 )
-logger.info(f"Pipeline de enforcement level = 3, descarte de lote")
+
 
 ## Caso 5:  Baseline sin contrato ni validacion
 run_baseline_pipeline(
@@ -84,7 +93,12 @@ run_pipeline(
     spark,
     "data/landing/2025-09/yellow_tripdata_2025-09.csv",
     "contracts/drafts/draft_contract_yellow_tripdata_2025-09.yaml",
-    "batch_2025_09_new_contract"
+    "batch_2025_09_new_contract",
+    cert_path="data/certified_2025-09/",
+    quarantine_path="data/quarantine_2025-09/"
 )
 
 logger.info(f"Pipeline finished")
+
+df = spark.read.format("delta").load("data/observability")
+df.show(20)

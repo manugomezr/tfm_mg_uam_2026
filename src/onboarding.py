@@ -11,7 +11,7 @@ def profile_and_draft_contract(spark, parquet_filepath: str, output_path: str):
     type_map_to_contract = {
         "StringType": "string",
         "IntegerType": "integer",
-        "LongType": "integer",
+        "LongType": "long",
         "DoubleType": "double"
     }
 
@@ -23,7 +23,7 @@ def profile_and_draft_contract(spark, parquet_filepath: str, output_path: str):
 
     for field in df.schema.fields:
         spark_type = type(field.dataType).__name__
-        contract_type = type_map_to_contract.get(spark_type, "string")
+        contract_type = type_map_to_contract.get(spark_type)
 
         logger.info(f"type {spark_type} mapeado a {contract_type} para el campo {field.name}")
 
@@ -42,7 +42,7 @@ def profile_and_draft_contract(spark, parquet_filepath: str, output_path: str):
                 quality_rules.append({
                     "field": field.name,
                     "rule": "max_null_rate",
-                    "value": null_rate  # arbitrario
+                    "value": min(null_rate, 0.01)  # arbitrario
                 })
 
     # Creacion de reglas de calidad por tabla o contrato

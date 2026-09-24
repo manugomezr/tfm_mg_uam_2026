@@ -1,6 +1,6 @@
 from pyspark.sql.types import (
     StructType, StructField, StringType, IntegerType,
-    DoubleType, BooleanType, TimestampType, ArrayType
+    DoubleType, BooleanType, ArrayType, LongType
 )
 import logging
 from datetime import datetime
@@ -11,12 +11,13 @@ logger = logging.getLogger(__name__)
 SPARK_TYPE_MAP = {
     "string": StringType(),
     "integer": IntegerType(),
+    "long": LongType(),
     "double": DoubleType()
 }
 
 def build_spark_schema(contract: dict, include_diagnostic_fields: bool = False) -> StructType:
     fields = [
-        StructField(f["name"], SPARK_TYPE_MAP[f["type"]], f["nullable"])
+        StructField(f["name"], SPARK_TYPE_MAP[f["type"]], True if include_diagnostic_fields else f["nullable"] )
         for f in contract["schema"]
     ]
     if include_diagnostic_fields:
@@ -37,15 +38,25 @@ def build_observability_schema() -> StructType:
         StructField("failed_records", IntegerType(), True),
         StructField("rejected_batch", BooleanType(), True),
         StructField("errors", ArrayType(StringType()), True),
+        StructField("table_violations", StringType(), True),
+        StructField("batch_violations", StringType(), True),
     ])
 
-def run_pipeline(spark, file_path: str, contract_path: str, batch_id: str):
+def run_pipeline(
+        spark,
+        file_path: str,
+        contract_path: str,
+        batch_id: str,
+        cert_path : str = "data/certified/",
+        quarantine_path : str = "data/quarantine/"
+):
 
     contract = load_contract(contract_path)
     enforcement_level = contract["contract"]["enforcement_level"]
 
     read_schema = build_spark_schema(contract)
     df = spark.read.csv(file_path, header=True, schema=read_schema)
+    df = df.na.replace(["Null", "null", "None", "NA", ""], None)
     rows = [row.asDict() for row in df.collect()]
 
     total = len(rows)
@@ -60,10 +71,10 @@ def run_pipeline(spark, file_path: str, contract_path: str, batch_id: str):
 
     # Escribir zonas
     if valid_rows:
-        spark.createDataFrame(valid_rows,schema=valid_schema).write.format("delta").mode("append").save("data/certified/")
+        spark.createDataFrame(valid_rows,schema=valid_schema).write.format("delta").mode("append").save(cert_path)
 
     if quarantine_rows and enforcement_level >= 2:
-        spark.createDataFrame(quarantine_rows,schema=quarantine_schema).write.format("delta").mode("append").save("data/quarantine/")
+        spark.createDataFrame(quarantine_rows,schema=quarantine_schema).write.format("delta").mode("append").save(quarantine_path)
 
     obs = [{
         "batch_id": batch_id,
@@ -74,12 +85,15 @@ def run_pipeline(spark, file_path: str, contract_path: str, batch_id: str):
         "passed_records": len(valid_rows),
         "failed_records": len(quarantine_rows),
         "rejected_batch": result["rejected_batch"],
-        "errors": result["errors"]
+        "errors": result["errors"],
+        "table_violations": result["table_violations"],
+        "batch_violations": result["batch_violations"]
     }]
     spark.createDataFrame(obs, schema=build_observability_schema()).write.format("delta").mode("append").save("data/observability/")
 
     logger.info(
-        f"Batch {batch_id}: {len(valid_rows)} válidos, {len(quarantine_rows)} en cuarentena, rejected_batch={result['rejected_batch']}")
+        f"Batch {batch_id}: {len(valid_rows)} válidos, {len(quarantine_rows)} en cuarentena, rejected_batch={result['rejected_batch']},"
+        f"errores: {result['errors']}")
 
 def run_baseline_pipeline(spark, file_path: str, batch_id: str):
 

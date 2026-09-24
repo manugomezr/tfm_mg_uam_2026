@@ -64,16 +64,16 @@ schema:
 quality:
 - field: passenger_count
   rule: max_null_rate
-  value: 0.01
+  value: 0.0482
 - field: RatecodeID
   rule: max_null_rate
-  value: 0.01
+  value: 0.0482
 - field: congestion_surcharge
   rule: max_null_rate
-  value: 0.01
+  value: 0.0482
 - field: airport_fee
   rule: max_null_rate
-  value: 0.01
+  value: 0.0482
 table_quality:
 - rule: min_row_count
   value: 495
